@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-vip-ds
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-vip-ds
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-vip-ds
+    spec:
+      hostNetwork: true
+      serviceAccountName: kube-vip
+      # --- ADDED AFFINITY ---
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+      # -----------------------
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      containers:
+        - name: kube-vip
+          image: ghcr.io/kube-vip/kube-vip:v1.1.0
+          imagePullPolicy: IfNotPresent
+          args: ["manager"]
+          env:
+            - name: address
+              value: "10.0.1.34"
+            - name: vip_interface
+              value: "eth1"
+            - name: vip_arp
+              value: "true"
+            - name: port
+              value: "6443"
+            - name: cp_enable
+              value: "true"
+            - name: cp_namespace
+              value: "kube-system"
+            - name: vip_leaderelection
+              value: "true"
+            - name: svc_enable
+              value: "true"
+            - name: vip_nodename
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN", "NET_RAW"]
+
+---
+# 3. The Cloud Provider (The "IP Assigner")
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-vip-cloud-provider
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-vip-cloud-provider
+  template:
+    metadata:
+      labels:
+        app: kube-vip-cloud-provider
+    spec:
+      serviceAccountName: kube-vip
+      containers:
+        - name: kube-vip-cloud-provider
+          image: ghcr.io/kube-vip/kube-vip-cloud-provider:v0.0.10
+          imagePullPolicy: IfNotPresent
+          command: ["/kube-vip-cloud-provider"]
+          args: ["--leader-elect-resource-name=kube-vip-cloud-controller"]
+          env:
+            - name: VIP_BLOCK_OUTBOUND
+              value: "false"
+---
+# 4. The IP Range ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubevip
+  namespace: kube-system
+data:
+  range-global: 10.0.1.50-10.0.1.253

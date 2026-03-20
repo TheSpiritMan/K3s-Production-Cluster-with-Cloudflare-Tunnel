@@ -1,0 +1,68 @@
+deployment:
+  replicas: 1
+
+providers:
+  kubernetesIngress:
+    enabled: true
+  kubernetesGateway:
+    enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+gateway:
+  enabled: false
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: ""          # Kube-Vip will allocate from svc_range
+  externalTrafficPolicy: Local
+
+ports:
+  web:
+    expose:
+      strategy: LoadBalancer
+    exposedPort: 80
+  websecure:
+    port: 443
+    expose:
+      strategy: LoadBalancer
+    exposedPort: 443
+
+logs:
+  general:
+    level: INFO
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: sandab-traefik-tls
+
+# Forwarded headers & global middleware via additionalArguments
+additionalArguments:
+  # Trusted IPs for forwarded headers
+  ## Node CIDR = 10.0.1.0/24 
+  ## Pod CIDR = 192.168.0.0/16
+  - "--entrypoints.web.forwardedHeaders.trustedIPs=10.0.1.0/24,192.168.0.0/16"
+  - "--entrypoints.websecure.forwardedHeaders.trustedIPs=10.0.1.0/24,192.168.0.0/16"
+
+  # Entrypoint addresses
+  - "--entrypoints.web.address=:80"
+  - "--entrypoints.websecure.address=:443"
+
+  # Global HTTP → HTTPS redirect
+  - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+  - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+  - "--entrypoints.web.http.redirections.entryPoint.permanent=true"
+
+  # Global Middleware for HTTP → HTTPS redirect
+  - "--entrypoints.websecure.http.middlewares=traefik-traefik-force-https@kubernetescrd"

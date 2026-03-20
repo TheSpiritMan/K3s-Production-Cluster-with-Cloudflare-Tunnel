@@ -1,0 +1,43 @@
+deployment:
+  replicas: 1
+
+providers:
+  kubernetesIngress:
+    enabled: true
+  kubernetesGateway:
+    enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+gateway:
+  enabled: false
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: ""          # Kube-Vip will allocate from svc_range
+  externalTrafficPolicy: Local
+
+ports:
+  web:
+    expose:
+      strategy: LoadBalancer
+    exposedPort: 80
+  websecure:
+    port: 443
+    expose:
+      strategy: LoadBalancer
+    exposedPort: 443
+
+logs:
+  general:
+    level: INFO
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

@@ -1,0 +1,94 @@
+---
+# 1. Deployment for whoami
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+        - name: whoami
+          image: traefik/whoami:latest
+          ports:
+            - containerPort: 80
+---
+# 2. Service for whoami
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami-service
+  namespace: default
+spec:
+  selector:
+    app: whoami
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+# 3. Kubernetes Ingress - path /standard-ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoami-ingress
+  namespace: default
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: clientip.sandab.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: whoami-service
+                port:
+                  number: 80
+---
+# 4. Traefik IngressRoute - path /ir
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: whoami-ingressroute
+  namespace: default
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`clientip-ir.sandab.me`) && PathPrefix(`/ir`)
+      kind: Rule
+      services:
+        - name: whoami-service
+          port: 80
+---
+# 5. Gateway API HTTPRoute - path /hr
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: whoami-httproute
+  namespace: default
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+  hostnames:
+    - "clientip-hr.sandab.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /hr
+      backendRefs:
+        - name: whoami-service
+          port: 80

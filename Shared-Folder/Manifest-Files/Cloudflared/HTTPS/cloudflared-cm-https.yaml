@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-shared
+  namespace: cloudflared
+data:
+  config.yaml: |
+    tunnel: k3s-cloudflared-tunnel
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+      - hostname: "postgres-db.sandab.me"
+        service: tcp://postgres.default.svc.cluster.local:5432
+        originRequest:
+          noTLSVerify: false
+      - hostname: "*.sandab.me"
+        service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          noTLSVerify: false
+          originServerName: sandab.me
+      - hostname: "sandab.me"
+        service: https://traefik.traefik.svc.cluster.local:443
+        originRequest:
+          noTLSVerify: false
+          originServerName: sandab.me
+      - service: http_status:404

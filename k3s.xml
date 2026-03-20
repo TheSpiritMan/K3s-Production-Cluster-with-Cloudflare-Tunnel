@@ -1,0 +1,16 @@
+<network>
+  <name>k3s</name>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='k3s' stp='on' delay='0' />
+  <mac address='52:54:00:60:f8:6e'/>
+  <ip address='10.0.1.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.0.1.2' end='10.0.1.254' />
+    </dhcp>
+  </ip>
+</network>
+

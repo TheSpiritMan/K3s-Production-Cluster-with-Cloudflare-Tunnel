@@ -590,7 +590,7 @@
   - Expose TCP locally using `cloudflared` cli.
   - Connect to TCP port using application.
 
-> Note: There is CLI tool called [cloudflared-tcp](https://github.com/TheSpiritMan/Cloudflared-TCP-Systemd) which I developed to manage multiple local connection.
+> Note: There is CLI tool called [cloudflared-tcp](https://github.com/TheSpiritMan/Cloudflared-TCP) which I developed to manage multiple local connection.
 
 - Delete Postgres:
   ```sh
@@ -710,10 +710,8 @@
     --cert=Shared-Folder/Manifest-Files/Traefik/WithTLS/SSL-Cert/fullChain.pem \
     --key=Shared-Folder/Manifest-Files/Traefik/WithTLS/SSL-Cert/privKey.pem \
     -n traefik --dry-run=client -o yaml > Shared-Folder/Manifest-Files/Traefik/WithTLS/sandab-traefik-tls.yaml
-  ```
-
-- Apply above TLS Secret:
-  ```sh
+  
+  # Apply above TLS Secret:
   kubectl apply -f Shared-Folder/Manifest-Files/Traefik/WithTLS/sandab-traefik-tls.yaml
   ```
 ### Traefik with TLS
@@ -792,7 +790,7 @@
 #### Test if SSL is being served or not from `traefik` pod:
 - Command:
   ```sh
-  kubectl run tls-test --image=alpine --rm -it -- sh -c "apk update && apk add --no-cache openssl && openssl s_client -connect traefik.traefik.svc.cluster.local:443 -showcerts < /dev/null 2>/dev/null | openssl x509 -noout -text"
+  kubectl run tls-test --image=alpine --rm -it -- sh -c "apk update && apk add --no-cache openssl && openssl s_client -connect traefik.traefik.svc.cluster.local:443 -showcerts < /dev/null 2>/dev/null | openssl x509 -noout -text | grep DNS"
   ```
   Output:
   ```sh

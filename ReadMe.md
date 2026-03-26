@@ -4,6 +4,8 @@
 - We have no static Public IP for our Kubernetes Node.
 - We are behind CGNAT.
 
+<img src="./Assets/accessingServicesfromPrivateKubernetesClusterUsingCloudflaredTunnel.png" width=1200px height=600px>
+
 ### Prerequistics
 - `virsh` cli
 - [Vagrant]()

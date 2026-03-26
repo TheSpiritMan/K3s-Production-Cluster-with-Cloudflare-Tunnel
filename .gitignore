@@ -1,2 +1,5 @@
 .vagrant/
 k3s-cloudflare-tunnel.yaml
+
+Local/
+Readme.md.bak
